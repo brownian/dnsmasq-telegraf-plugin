@@ -73,6 +73,13 @@ func (d *Dnsmasq) Gather(acc telegraf.Accumulator) error {
 		case "servers.bind.":
 			for _, str := range txt.Txt {
 				arr := strings.Fields(str)
+
+				server_fields := make(map[string]interface{}, 2)
+				server_tags := map[string]string{
+					"server": d.Server,
+					"resolver": arr[0],
+				}
+
 				if got, want := len(arr), 3; got != want {
 					return fmt.Errorf("stats DNS record servers.bind.: unexpeced number of argument in record: got %d, want %d", got, want)
 				}
@@ -84,8 +91,10 @@ func (d *Dnsmasq) Gather(acc telegraf.Accumulator) error {
 				if err != nil {
 					return err
 				}
-				fields["queries"] = queries
-				fields["queries_failed"] = failedQueries
+
+				server_fields["queries"] = queries
+				server_fields["queries_failed"] = failedQueries
+				acc.AddFields("dnsmasq", server_fields, server_tags)
 			}
 		default:
 			if got, want := len(txt.Txt), 1; got != want {
